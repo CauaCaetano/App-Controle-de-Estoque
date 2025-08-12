@@ -107,51 +107,63 @@ user_problem_statement: "Sistema de controle de estoque completo com cadastro de
 backend:
   - task: "Modelos de dados (Produto, MovimentacaoEstoque)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Criados modelos Produto e MovimentacaoEstoque com enums para unidades e tipos de movimentação"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO: Modelos funcionando corretamente. Produtos criados com sucesso usando enums UnidadeMedida (pacote, unidade) e validações de campos obrigatórios. Movimentações registradas corretamente com tipos ENTRADA/SAIDA e motivos."
 
   - task: "CRUD de Produtos"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implementados endpoints: POST/GET/PUT/DELETE para produtos com validações"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO: Todos os endpoints CRUD funcionando perfeitamente. POST /api/produtos cria produtos com validação de nome único. GET /api/produtos lista com filtros por categoria e busca por nome/código de barras. PUT /api/produtos/{id} atualiza campos específicos. DELETE /api/produtos/{id} desativa produto (soft delete). Testado com produtos: Arroz 5kg (Alimentos) e Detergente (Limpeza)."
 
   - task: "Sistema de Movimentações de Estoque"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Sistema de entrada/saída com controle automático de quantidades e validações"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO: Sistema de movimentações funcionando corretamente. POST /api/movimentacoes registra entradas e saídas com atualização automática de quantidades. Validação de estoque negativo funcionando (retorna erro 400 quando quantidade insuficiente). GET /api/movimentacoes lista histórico ordenado por data. Testado: entrada de 20 unidades de Arroz, saída de 2 unidades de Detergente, validação de estoque insuficiente."
 
   - task: "Dashboard e Relatórios"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Endpoint dashboard com estatísticas, alertas de estoque baixo e últimas movimentações"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO: Dashboard funcionando perfeitamente. GET /api/dashboard retorna estatísticas completas: total_produtos, produtos_sem_estoque, produtos_estoque_baixo, produtos_zerados, estoque_baixo, ultimas_movimentacoes, categorias. GET /api/categorias lista categorias únicas dos produtos ativos. Dados corretos: 2 produtos, 2 categorias (Alimentos, Limpeza), 4 movimentações registradas."
 
 frontend:
   - task: "Interface Dashboard"
