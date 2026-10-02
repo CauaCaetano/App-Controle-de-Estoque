@@ -11,7 +11,7 @@
 // Os dados ficam só no navegador de quem testa (localStorage).
 // =============================================================
 
-const CHAVE = 'stockmaster-demo-v1';
+const CHAVE = 'nexo-erp-demo-v2';
 const agora = () => new Date().toISOString();
 const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
 
@@ -20,7 +20,10 @@ function exemplo() {
   const produtos = [];
   const movimentacoes = [];
   const quando = (dias) => new Date(t0 + dias * 864e5).toISOString();
-  const armazens = [{ id: uuid(), codigo: 'CD01', nome: 'Depósito Principal', ativo: true, created_at: quando(0) }];
+  const armazens = [
+    { id: uuid(), codigo: 'CD01', nome: 'Depósito Principal', ativo: true, created_at: quando(0) },
+    { id: uuid(), codigo: 'CD02', nome: 'Depósito Secundário', ativo: true, created_at: quando(0) },
+  ];
   const criar = (nome, categoria, unidade, minima, compra, venda, movs) => {
     const p = {
       id: uuid(), nome, categoria, unidade_medida: unidade, quantidade_atual: 0, quantidade_minima: minima,
@@ -36,16 +39,55 @@ function exemplo() {
     });
     produtos.push(p);
   };
-  criar('Café em grãos 1kg', 'Cafeteria', 'pacote', 6, 38.5, 59.9, [['entrada', 20, 'compra', 0], ['saida', 16, 'venda', 5]]);
-  criar('Leite integral 1L', 'Cafeteria', 'litro', 12, 4.79, 7.5, [['entrada', 48, 'compra', 0], ['saida', 21, 'venda', 4]]);
-  criar('Copo descartável 300ml', 'Descartáveis', 'pacote', 10, 8.9, 14, [['entrada', 30, 'compra', 1], ['saida', 23, 'venda', 5]]);
-  criar('Pão de queijo congelado', 'Salgados', 'kg', 5, 22, 42, [['entrada', 12, 'compra', 1], ['saida', 9, 'venda', 3], ['saida', 1, 'perda', 4]]);
-  criar('Açúcar refinado 1kg', 'Mercearia', 'pacote', 8, 4.2, 6.9, [['entrada', 15, 'compra', 2], ['saida', 3, 'venda', 5]]);
-  criar('Chocolate em pó 400g', 'Cafeteria', 'pacote', 4, 11.3, 18.9, [['entrada', 6, 'compra', 2], ['saida', 6, 'venda', 6]]);
+  criar('Arroz integral 5kg', 'Mercearia', 'unidade', 10, 22.5, 31.9, [['entrada', 60, 'compra', 0], ['saida', 10, 'venda', 5]]);
+  criar('Café torrado 500g', 'Mercearia', 'pacote', 12, 17.8, 25.9, [['entrada', 30, 'compra', 0], ['saida', 6, 'venda', 4]]);
+  criar('Detergente neutro 500ml', 'Limpeza', 'unidade', 10, 2.1, 3.49, [['entrada', 24, 'compra', 1], ['saida', 15, 'venda', 5]]);
+  criar('Papel toalha 2 rolos', 'Limpeza', 'pacote', 8, 5.4, 8.9, [['entrada', 20, 'compra', 1], ['saida', 4, 'venda', 3]]);
+  criar('Feijão carioca 1kg', 'Mercearia', 'pacote', 10, 6.2, 8.9, [['entrada', 40, 'compra', 2], ['saida', 10, 'venda', 5]]);
+  criar('Óleo de soja 900ml', 'Mercearia', 'unidade', 10, 5.3, 7.49, [['entrada', 40, 'compra', 2], ['saida', 4, 'venda', 5]]);
+  const produto = (nome) => produtos.find((p) => p.nome === nome);
+  const fornecedores = [
+    { id: uuid(), razao_social: 'Distribuidora Vale do Grão Ltda.', nome_fantasia: 'Vale do Grão', documento: 'DEMO-FORN-001', email: 'vendas@valedograo.demo', telefone: '(11) 3333-1001', contato: 'Marina Souza', ativo: true, created_at: quando(0), updated_at: quando(0) },
+    { id: uuid(), razao_social: 'Higiene & Cia Atacado Ltda.', nome_fantasia: 'Higiene & Cia', documento: 'DEMO-FORN-002', email: 'comercial@higiene.demo', telefone: '(11) 3333-1002', contato: 'Rafael Lima', ativo: true, created_at: quando(0), updated_at: quando(0) },
+  ];
+  const clientes = [
+    { id: uuid(), nome: 'Mercadinho São Bento', documento: 'DEMO-CLI-001', email: 'compras@saobento.demo', telefone: '(11) 4444-2001', ativo: true, created_at: quando(0) },
+    { id: uuid(), nome: 'Café da Praça', documento: 'DEMO-CLI-002', email: 'contato@cafedapraca.demo', telefone: '(11) 4444-2002', ativo: true, created_at: quando(0) },
+    { id: uuid(), nome: 'Empório Central', documento: 'DEMO-CLI-003', email: 'estoque@emporiocentral.demo', telefone: '(11) 4444-2003', ativo: true, created_at: quando(0) },
+  ];
+  const linhas = (nomes) => nomes.map(([nome, quantidade, preco]) => {
+    const p = produto(nome);
+    return { id: uuid(), produto_id: p.id, produto_nome: p.nome, unidade_medida: p.unidade_medida, quantidade, preco_unitario: preco, total: Number((quantidade * preco).toFixed(2)), quantidade_recebida: quantidade };
+  });
+  const pedidoCompra = (codigo, fornecedor, itens, dia) => ({ id: uuid(), codigo, tipo: 'compra', fornecedor_id: fornecedor.id, fornecedor_nome: fornecedor.nome_fantasia, armazem_id: armazens[0].id, armazem_nome: armazens[0].nome, itens, total: Number(itens.reduce((s, i) => s + i.total, 0).toFixed(2)), status: 'recebido', observacoes: 'Carga inicial de demonstração', created_at: quando(dia), updated_at: quando(dia) });
+  const pedidoVenda = (codigo, cliente, warehouse, nomes, status, dia) => {
+    const itens = nomes.map(([nome, quantidade, preco]) => { const p = produto(nome); return { id: uuid(), produto_id: p.id, produto_nome: p.nome, unidade_medida: p.unidade_medida, quantidade, preco_unitario: preco, total: Number((quantidade * preco).toFixed(2)) }; });
+    return { id: uuid(), codigo, tipo: 'venda', cliente_id: cliente.id, cliente_nome: cliente.nome, armazem_id: warehouse.id, armazem_nome: warehouse.nome, itens, total: Number(itens.reduce((s, i) => s + i.total, 0).toFixed(2)), status, observacoes: 'Pedido de demonstração', created_at: quando(dia), updated_at: quando(dia), ...(status === 'expedido' ? { expedido_at: quando(dia) } : {}) };
+  };
+  const pedidos_compra = [
+    pedidoCompra('PC-260930-001', fornecedores[0], linhas([['Arroz integral 5kg', 60, 22.5], ['Café torrado 500g', 30, 17.8], ['Feijão carioca 1kg', 40, 6.2], ['Óleo de soja 900ml', 40, 5.3]]), 0),
+    pedidoCompra('PC-260930-002', fornecedores[1], linhas([['Detergente neutro 500ml', 24, 2.1], ['Papel toalha 2 rolos', 20, 5.4]]), 1),
+  ];
+  // O arroz está dividido entre os dois depósitos: 42 no principal e 8 no secundário.
+  const arroz = produto('Arroz integral 5kg');
+  movimentacoes.push(
+    { id: uuid(), produto_id: arroz.id, tipo: 'saida', motivo: 'transferencia', quantidade: 8, quantidade_anterior: arroz.quantidade_atual, quantidade_nova: arroz.quantidade_atual, armazem_id: armazens[0].id, armazem_origem_id: armazens[0].id, armazem_destino_id: armazens[1].id, created_at: quando(5) },
+    { id: uuid(), produto_id: arroz.id, tipo: 'entrada', motivo: 'transferencia', quantidade: 8, quantidade_anterior: arroz.quantidade_atual, quantidade_nova: arroz.quantidade_atual, armazem_id: armazens[1].id, armazem_origem_id: armazens[0].id, armazem_destino_id: armazens[1].id, created_at: quando(5) },
+  );
+  const pedidos_venda = [
+    pedidoVenda('PV-261001-001', clientes[0], armazens[0], [['Café torrado 500g', 6, 25.9], ['Detergente neutro 500ml', 15, 3.49], ['Papel toalha 2 rolos', 4, 8.9], ['Feijão carioca 1kg', 10, 8.9], ['Óleo de soja 900ml', 4, 7.49]], 'expedido', 5),
+    pedidoVenda('PV-261002-002', clientes[1], armazens[0], [['Arroz integral 5kg', 6, 31.9], ['Papel toalha 2 rolos', 3, 8.9]], 'aberto', 6),
+  ];
   return {
     produtos, movimentacoes, armazens,
-    estoque_armazem: produtos.map((produto) => ({ id: `${produto.id}:${armazens[0].id}`, produto_id: produto.id, armazem_id: armazens[0].id, quantidade: produto.quantidade_atual })),
-    fornecedores: [], clientes: [], pedidos_compra: [], pedidos_venda: [], auditoria: [],
+    estoque_armazem: produtos.flatMap((p) => p.id === arroz.id
+      ? [{ id: `${p.id}:${armazens[0].id}`, produto_id: p.id, armazem_id: armazens[0].id, quantidade: 42 }, { id: `${p.id}:${armazens[1].id}`, produto_id: p.id, armazem_id: armazens[1].id, quantidade: 8 }]
+      : [{ id: `${p.id}:${armazens[0].id}`, produto_id: p.id, armazem_id: armazens[0].id, quantidade: p.quantidade_atual }]),
+    fornecedores, clientes, pedidos_compra, pedidos_venda,
+    auditoria: [
+      { id: uuid(), acao: 'pedido_recebido', entidade: 'compra', descricao: 'Recebimento de compras iniciais', created_at: quando(1) },
+      { id: uuid(), acao: 'pedido_expedição', entidade: 'venda', descricao: 'Expedição de pedido de demonstração', created_at: quando(5) },
+    ],
   };
 }
 
