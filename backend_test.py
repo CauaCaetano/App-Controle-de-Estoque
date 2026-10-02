@@ -10,7 +10,10 @@ import sys
 from datetime import datetime
 
 # URL base do backend
-BASE_URL = "https://stock-master-20.preview.emergentagent.com/api"
+import os
+
+# Rode o backend antes (ver README) ou aponte para outro servidor com ESTOQUE_API_URL
+BASE_URL = os.environ.get("ESTOQUE_API_URL", "http://127.0.0.1:8001/api")
 
 class StockSystemTester:
     def __init__(self):

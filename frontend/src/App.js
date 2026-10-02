@@ -5,6 +5,8 @@ import axios from "axios";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+const reais = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 // Componente principal
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -83,8 +85,12 @@ function Dashboard() {
   const fetchDashboard = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/dashboard`);
-      setDashboard(response.data);
+      const [resposta, produtos] = await Promise.all([
+        axios.get(`${API}/dashboard`),
+        axios.get(`${API}/produtos`),
+      ]);
+      const nomes = Object.fromEntries(produtos.data.map((p) => [p.id, p.nome]));
+      setDashboard({ ...resposta.data, nomes });
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
     } finally {
@@ -231,6 +237,9 @@ function Dashboard() {
                     Data
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Produto
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Tipo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -246,6 +255,9 @@ function Dashboard() {
                   <tr key={mov.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(mov.created_at).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {dashboard.nomes[mov.produto_id] || 'Produto removido'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -445,9 +457,9 @@ function Produtos() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div>
-                        <div>V: R$ {produto.preco_venda?.toFixed(2) || '0.00'}</div>
+                        <div>V: {reais(produto.preco_venda)}</div>
                         <div className="text-xs text-gray-500">
-                          C: R$ {produto.preco_compra?.toFixed(2) || '0.00'}
+                          C: {reais(produto.preco_compra)}
                         </div>
                       </div>
                     </td>
