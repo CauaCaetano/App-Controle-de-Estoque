@@ -2,9 +2,7 @@
 
 Um ERP operacional para uma pequena distribuidora. O sistema conecta cadastro de produtos, fornecedores, compras, recebimento, saldo por depósito, clientes, pedidos de venda e expedição em um mesmo fluxo. Cada movimento de estoque tem uma origem compreensível: uma compra recebida, uma venda expedida ou uma transferência entre depósitos.
 
-![Painel do StockMaster](docs/dashboard.png)
-
-**Teste agora, sem instalar nada:** https://cauacaetano.github.io/blue-rose-automacao-express/demos/stockmaster/
+![Painel operacional do Nexo Gestão com alertas, produtos por categoria e movimentações recentes](docs/dashboard.png)
 
 ## Fluxo de trabalho
 
@@ -19,7 +17,7 @@ O painel acompanha valor do estoque, alertas de reposição, depósitos e ativid
 
 O escopo é de operação de uma pequena distribuidora. Financeiro, emissão fiscal, autenticação e permissões por usuário são etapas futuras, pois precisam de regras próprias antes de se tornarem confiáveis. Mais contexto em [`docs/CONTEXTO_ERP.md`](docs/CONTEXTO_ERP.md).
 
-![Lista de produtos](docs/produtos.png)
+![Cadastro de produtos do Nexo Gestão com preços, saldo e níveis mínimos](docs/produtos.png)
 
 ## Tecnologias
 
@@ -54,7 +52,7 @@ REACT_APP_BACKEND_URL=http://127.0.0.1:8001 yarn start
 
 ## Modo demonstração (sem servidor)
 
-`REACT_APP_DEMO=1` troca as chamadas da API por uma versão que roda no navegador (`frontend/src/demoApi.js`). Ela inclui fornecedores e clientes, depósitos, transferências, pedidos de compra e venda, recebimento e expedição. Os dados ficam no `localStorage` de quem testa.
+`REACT_APP_DEMO=1` troca as chamadas da API por uma versão que roda no navegador (`frontend/src/demoApi.js`). Ela inclui fornecedores e clientes, depósitos, transferências, pedidos de compra e venda, recebimento e expedição. Os dados ficam no `localStorage` de quem testa. Para gerar o pacote estático para hospedagem:
 
 ```bash
 cd frontend
@@ -75,4 +73,6 @@ python backend_test.py         # roteiro de ponta a ponta contra o backend rodan
 - Painel passou a mostrar o nome do produto em cada movimentação; preços em formato brasileiro (R$ 59,90).
 - Banco em memória para rodar e testar sem instalar o MongoDB; dependências reduzidas ao que o código usa.
 
-Projeto da [BLUE ROSE](https://cauacaetano.github.io/blue-rose-automacao-express/).
+Os módulos podem ser abertos diretamente com links como `/?page=compras`, `/?page=vendas` e `/?page=produtos`. Ao navegar, a URL acompanha a tela atual.
+
+Código-fonte: [CauaCaetano/App-Controle-de-Estoque](https://github.com/CauaCaetano/App-Controle-de-Estoque).

@@ -9,6 +9,11 @@ if (DEMO) ativarDemo(axios);
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+const PAGINAS = ['dashboard', 'produtos', 'compras', 'vendas', 'movimentacoes', 'armazens', 'fornecedores', 'clientes', 'erp'];
+const paginaSolicitada = () => {
+  const pagina = new URLSearchParams(window.location.search).get('page');
+  return PAGINAS.includes(pagina) ? pagina : 'dashboard';
+};
 
 const reais = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const rotulosMotivo = { compra: 'Compra', venda: 'Venda', perda: 'Perda', devolucao: 'Devolução', ajuste: 'Ajuste de estoque', inicial: 'Saldo inicial', transferencia: 'Transferência' };
@@ -16,7 +21,20 @@ const rotuloMotivo = (motivo) => rotulosMotivo[motivo] || motivo;
 
 // Componente principal
 function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState(paginaSolicitada);
+  const navegarPara = (pagina) => {
+    if (!PAGINAS.includes(pagina)) return;
+    setCurrentPage(pagina);
+    const url = new URL(window.location.href);
+    if (pagina === 'dashboard') url.searchParams.delete('page');
+    else url.searchParams.set('page', pagina);
+    window.history.pushState({ pagina }, '', url);
+  };
+  useEffect(() => {
+    const sincronizarPagina = () => setCurrentPage(paginaSolicitada());
+    window.addEventListener('popstate', sincronizarPagina);
+    return () => window.removeEventListener('popstate', sincronizarPagina);
+  }, []);
   const menu = [
     { id: 'dashboard', label: 'Visão geral', icon: LayoutDashboard, group: 'Operação' },
     { id: 'produtos', label: 'Produtos', icon: Package, group: 'Operação' },
@@ -44,8 +62,8 @@ function App() {
               >
                 Recomeçar com os dados de exemplo
               </button>
-              <a className="underline underline-offset-2 hover:text-white" href="../../projetos.html#stockmaster" target="_top">
-                Voltar ao site da BLUE ROSE
+              <a className="underline underline-offset-2 hover:text-white" href="https://github.com/CauaCaetano/App-Controle-de-Estoque" target="_blank" rel="noreferrer">
+                Ver código-fonte no GitHub
               </a>
             </span>
           </div>
@@ -68,7 +86,7 @@ function App() {
           <nav className="flex-1 px-3 pb-4">
             {['Operação', 'Cadastros', 'Gestão'].map((group) => <div key={group} className="mb-5">
               <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">{group}</div>
-              <div className="space-y-1">{menu.filter((item) => item.group === group).map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => setCurrentPage(item.id)} aria-current={currentPage === item.id ? 'page' : undefined}
+              <div className="space-y-1">{menu.filter((item) => item.group === group).map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => navegarPara(item.id)} aria-current={currentPage === item.id ? 'page' : undefined}
                 className={`erp-nav-item flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium transition ${currentPage === item.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}>
                 <Icon size={17} strokeWidth={1.8} /><span>{item.label}</span>{currentPage === item.id && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-600" />}
               </button>; })}</div>
@@ -83,11 +101,11 @@ function App() {
           <header className="erp-topbar sticky top-0 z-20 border-b border-slate-200/80 bg-white/95 backdrop-blur">
             <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-7 lg:px-9">
               <div className="flex items-center gap-3"><div className="lg:hidden grid h-9 w-9 place-items-center rounded-lg bg-indigo-600 text-white"><Boxes size={19} /></div><div><div className="text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">{page?.group || 'Operação'}</div><h1 className="mt-0.5 text-lg font-bold tracking-tight text-slate-900">{page?.label}</h1></div></div>
-              <div className="flex items-center gap-3"><div className="hidden items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500 md:flex"><Activity size={14} className="text-emerald-600"/><span>Ambiente operacional</span></div><button type="button" aria-label="Abrir indicadores" title="Abrir indicadores" onClick={() => setCurrentPage('erp')} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"><Bell size={16} /></button><div className="hidden h-8 w-px bg-slate-200 sm:block"/><span className="hidden text-xs font-semibold text-slate-600 sm:inline">Operação</span></div>
+              <div className="flex items-center gap-3"><div className="hidden items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500 md:flex"><Activity size={14} className="text-emerald-600"/><span>Ambiente operacional</span></div><button type="button" aria-label="Abrir indicadores" title="Abrir indicadores" onClick={() => navegarPara('erp')} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"><Bell size={16} /></button><div className="hidden h-8 w-px bg-slate-200 sm:block"/><span className="hidden text-xs font-semibold text-slate-600 sm:inline">Operação</span></div>
             </div>
           </header>
           <div className="erp-mobile-nav sticky top-[61px] z-10 flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 lg:hidden">
-            {menu.map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => setCurrentPage(item.id)} className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold ${currentPage === item.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50'}`}><Icon size={14}/>{item.label}</button>; })}
+            {menu.map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => navegarPara(item.id)} className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold ${currentPage === item.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50'}`}><Icon size={14}/>{item.label}</button>; })}
           </div>
       {/* Main Content */}
       <main className="erp-main w-full px-4 py-6 sm:px-6 lg:px-9 lg:py-8">
