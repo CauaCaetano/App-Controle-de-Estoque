@@ -297,8 +297,10 @@ async def listar_categorias():
 async def root():
     return {"message": "Sistema de Controle de Estoque - API"}
 
-# Include the router in the main app
+# Include the legacy API and the new ERP domain router.
 app.include_router(api_router)
+from erp_routes import erp_router
+app.include_router(erp_router)
 
 app.add_middleware(
     CORSMiddleware,
