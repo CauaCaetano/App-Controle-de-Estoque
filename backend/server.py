@@ -15,9 +15,15 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# MONGO_URL=memory roda com um banco em memória (mongomock-motor): bom para
+# demonstração e testes sem instalar o MongoDB. Os dados somem ao reiniciar.
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+if mongo_url == 'memory':
+    from mongomock_motor import AsyncMongoMockClient
+    client = AsyncMongoMockClient()
+else:
+    client = AsyncIOMotorClient(mongo_url)
+db = client[os.environ.get('DB_NAME', 'estoque')]
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -238,10 +244,15 @@ async def obter_dashboard():
     total_produtos = await db.produtos.count_documents({"ativo": True})
     produtos_sem_estoque = await db.produtos.count_documents({"quantidade_atual": 0, "ativo": True})
     
-    # Produtos com estoque baixo
+    # Produtos com estoque baixo: comparação entre dois campos do mesmo
+    # documento precisa de $expr (um filtro comum compararia com o texto
+    # "$quantidade_minima" e nunca encontraria nada).
     produtos_estoque_baixo = await db.produtos.find({
-        "quantidade_atual": {"$gt": 0, "$lte": "$quantidade_minima"}, 
-        "ativo": True
+        "ativo": True,
+        "$expr": {"$and": [
+            {"$gt": ["$quantidade_atual", 0]},
+            {"$lte": ["$quantidade_atual", "$quantidade_minima"]},
+        ]},
     }).to_list(1000)
     
     # Produtos sem estoque
