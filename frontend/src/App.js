@@ -14,6 +14,12 @@ const reais = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', curre
 // Componente principal
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const menu = [
+    { id: 'dashboard', label: 'Visão geral' },
+    { id: 'produtos', label: 'Produtos' },
+    { id: 'movimentacoes', label: 'Movimentações' },
+    { id: 'erp', label: 'Central ERP' },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -36,64 +42,56 @@ function App() {
           </div>
         </div>
       )}
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                </div>
-                <h1 className="text-xl font-bold text-gray-900">StockMaster</h1>
-              </div>
-            </div>
-            <nav className="flex space-x-4">
-              <button
-                onClick={() => setCurrentPage('dashboard')}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  currentPage === 'dashboard' 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => setCurrentPage('produtos')}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  currentPage === 'produtos' 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Produtos
-              </button>
-              <button
-                onClick={() => setCurrentPage('movimentacoes')}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  currentPage === 'movimentacoes' 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Movimentações
-              </button>
-            </nav>
+      {/* ERP shell */}
+      <div className="flex min-h-screen bg-slate-100">
+        <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-slate-950 text-white">
+          <div className="px-6 py-6 border-b border-slate-800">
+            <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Gestão empresarial</div>
+            <div className="mt-1 text-2xl font-black tracking-tight">StockMaster</div>
+            <div className="text-xs text-slate-500 mt-1">ERP • Estoque & Operações</div>
           </div>
-        </div>
-      </header>
+          <nav className="p-3 space-y-1">
+            {menu.map((item) => (
+              <button key={item.id} onClick={() => setCurrentPage(item.id)}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-semibold transition ${currentPage === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/30' : 'text-slate-300 hover:bg-slate-900 hover:text-white'}`}>
+                {item.label}
+              </button>
+            ))}
+          </nav>
+          <div className="mt-auto p-4 text-xs text-slate-500 border-t border-slate-800">Operação centralizada • Controle de estoque</div>
+        </aside>
 
+        <div className="flex-1 min-w-0">
+          <header className="bg-white border-b border-slate-200 sticky top-0 z-20">
+            <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+              <div><div className="text-xs font-semibold uppercase tracking-wider text-slate-400">Módulo</div><h1 className="text-xl font-bold text-slate-900">{menu.find(m => m.id === currentPage)?.label}</h1></div>
+              <div className="text-xs font-medium text-slate-500">Ambiente operacional</div>
+            </div>
+          </header>
+          <div className="lg:hidden bg-slate-950 px-3 py-2 flex gap-2 overflow-x-auto">
+            {menu.map((item) => <button key={item.id} onClick={() => setCurrentPage(item.id)} className={`whitespace-nowrap px-3 py-2 rounded-md text-xs font-semibold ${currentPage === item.id ? 'bg-blue-600 text-white' : 'text-slate-300'}`}>{item.label}</button>)}
+          </div>
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {currentPage === 'dashboard' && <Dashboard />}
         {currentPage === 'produtos' && <Produtos />}
         {currentPage === 'movimentacoes' && <Movimentacoes />}
+        {currentPage === 'erp' && <ERPCentral />}
       </main>
     </div>
   );
+}
+
+// ERP Central — indicadores operacionais da nova camada ERP.
+function ERPCentral() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { axios.get(`${API}/erp/resumo`).then(r => setData(r.data)).catch(console.error).finally(() => setLoading(false)); }, []);
+  if (loading) return <div className="p-10 text-center text-slate-500">Carregando central ERP...</div>;
+  if (!data) return <div className="p-10 text-center text-red-600">Não foi possível carregar a central ERP.</div>;
+  const i = data.indicadores;
+  const cards = [['Produtos', i.produtos], ['Itens em estoque', i.itens_em_estoque], ['Valor a custo', reais(i.valor_estoque_custo)], ['Valor potencial de venda', reais(i.valor_estoque_venda)], ['Estoque baixo', i.estoque_baixo], ['Estoque zerado', i.estoque_zerado], ['Fornecedores', i.fornecedores], ['Armazéns', i.armazens]];
+  return <div className="space-y-6"><div><p className="text-sm text-slate-500">Cockpit operacional</p><h2 className="text-2xl font-bold text-slate-900">Central ERP</h2></div><div className="grid grid-cols-2 xl:grid-cols-4 gap-4">{cards.map(([label,value]) => <div key={label} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm"><div className="text-xs uppercase tracking-wider font-semibold text-slate-400">{label}</div><div className="mt-2 text-2xl font-bold text-slate-900">{value}</div></div>)}</div><div className="grid lg:grid-cols-2 gap-6"><div className="bg-white border border-slate-200 rounded-xl p-6"><h3 className="font-bold text-slate-900">Alertas de estoque</h3><div className="mt-4 space-y-2">{[...(data.alertas.zerados || []).map(p => ({...p,tipo:'Zerado'})), ...(data.alertas.baixo || []).map(p => ({...p,tipo:'Baixo'}))].slice(0,8).map(p => <div key={p.id + p.tipo} className="flex justify-between border-b border-slate-100 py-3 text-sm"><span className="font-medium">{p.nome}</span><span className={p.tipo === 'Zerado' ? 'text-red-600 font-semibold' : 'text-amber-600 font-semibold'}>{p.tipo}</span></div>)}{data.alertas.zerados.length === 0 && data.alertas.baixo.length === 0 && <p className="text-sm text-slate-500 py-4">Nenhum alerta ativo.</p>}</div></div><div className="bg-slate-950 text-white rounded-xl p-6"><div className="text-xs uppercase tracking-wider text-slate-400">Potencial financeiro</div><div className="text-3xl font-bold mt-2">{reais(i.margem_potencial)}</div><p className="text-sm text-slate-400 mt-2">Diferença entre valor estimado de venda e custo do estoque atual.</p><div className="mt-6 grid grid-cols-2 gap-4"><div><div className="text-xs text-slate-500">Custo</div><div className="font-semibold">{reais(i.valor_estoque_custo)}</div></div><div><div className="text-xs text-slate-500">Venda</div><div className="font-semibold">{reais(i.valor_estoque_venda)}</div></div></div></div></div></div>;
 }
 
 // Dashboard Component
