@@ -1,17 +1,23 @@
-# StockMaster: controle de estoque
+# Nexo Gestão: operações de uma pequena distribuidora
 
-Sistema web para pequenos comércios controlarem estoque sem planilha: cadastro de produtos, entradas e saídas com motivo, bloqueio de saída maior que o saldo e um painel que avisa o que está acabando.
+Um ERP operacional para uma pequena distribuidora. O sistema conecta cadastro de produtos, fornecedores, compras, recebimento, saldo por depósito, clientes, pedidos de venda e expedição em um mesmo fluxo. Cada movimento de estoque tem uma origem compreensível: uma compra recebida, uma venda expedida ou uma transferência entre depósitos.
 
 ![Painel do StockMaster](docs/dashboard.png)
 
 **Teste agora, sem instalar nada:** https://cauacaetano.github.io/blue-rose-automacao-express/demos/stockmaster/
 
-## O que ele faz
+## Fluxo de trabalho
 
-- **Painel**: total de produtos, itens zerados, itens abaixo do mínimo e as últimas movimentações (com o nome do produto).
-- **Produtos**: cadastro com categoria, unidade (unidade, kg, litro, metro, caixa, pacote), preços de compra e venda, código de barras e quantidade mínima. Busca por nome ou código e filtro por categoria.
-- **Movimentações**: entrada (compra, devolução, ajuste) e saída (venda, perda). O saldo é atualizado na hora e uma saída maior que o estoque é recusada.
-- **Exclusão segura**: o produto é desativado, não apagado, então o histórico continua consistente.
+1. Cadastre fornecedores, produtos, clientes e depósitos.
+2. Abra um pedido de compra com os itens e o depósito de destino.
+3. Registre o recebimento. O saldo do depósito e o saldo global aumentam, e o movimento fica vinculado ao pedido e ao fornecedor.
+4. Abra um pedido de venda para um cliente e escolha de qual depósito separar.
+5. Expedir valida o saldo local e global antes de baixar o estoque. O movimento fica ligado ao pedido e ao cliente.
+6. Use transferências para mover itens entre depósitos sem alterar o saldo global.
+
+O painel acompanha valor do estoque, alertas de reposição, depósitos e atividade recente. A análise ABC ajuda a priorizar itens por valor em estoque. Produtos são desativados, em vez de apagados, para preservar o histórico.
+
+O escopo é de operação de uma pequena distribuidora. Financeiro, emissão fiscal, autenticação e permissões por usuário são etapas futuras, pois precisam de regras próprias antes de se tornarem confiáveis. Mais contexto em [`docs/CONTEXTO_ERP.md`](docs/CONTEXTO_ERP.md).
 
 ![Lista de produtos](docs/produtos.png)
 
@@ -48,7 +54,7 @@ REACT_APP_BACKEND_URL=http://127.0.0.1:8001 yarn start
 
 ## Modo demonstração (sem servidor)
 
-`REACT_APP_DEMO=1` troca as chamadas da API por uma versão que roda no navegador (`frontend/src/demoApi.js`), com as mesmas regras do backend: nome único, saída maior que o saldo recusada, estoque baixo e desativação. Os dados ficam no `localStorage` de quem testa. É assim que a demonstração pública funciona.
+`REACT_APP_DEMO=1` troca as chamadas da API por uma versão que roda no navegador (`frontend/src/demoApi.js`). Ela inclui fornecedores e clientes, depósitos, transferências, pedidos de compra e venda, recebimento e expedição. Os dados ficam no `localStorage` de quem testa.
 
 ```bash
 cd frontend

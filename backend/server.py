@@ -51,6 +51,7 @@ class MotivoMovimentacao(str, Enum):
     DEVOLUCAO = "devolucao"
     AJUSTE = "ajuste"
     INICIAL = "inicial"
+    TRANSFERENCIA = "transferencia"
 
 # Models
 class Produto(BaseModel):
@@ -98,16 +99,43 @@ class MovimentacaoEstoque(BaseModel):
     preco_unitario: float = 0
     observacoes: Optional[str] = None
     usuario: Optional[str] = "Sistema"
+    armazem_id: Optional[str] = None
+    fornecedor_id: Optional[str] = None
+    pedido_id: Optional[str] = None
+    cliente_id: Optional[str] = None
+    transferencia_id: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class MovimentacaoCreate(BaseModel):
     produto_id: str
     tipo: TipoMovimentacao
     motivo: MotivoMovimentacao
-    quantidade: float
+    quantidade: float = Field(gt=0)
     preco_unitario: float = 0
     observacoes: Optional[str] = None
     usuario: Optional[str] = "Sistema"
+    armazem_id: Optional[str] = None
+    fornecedor_id: Optional[str] = None
+    pedido_id: Optional[str] = None
+    cliente_id: Optional[str] = None
+
+
+async def obter_armazem_padrao():
+    armazem = await db.armazens.find_one({"codigo": "CD01"})
+    if armazem:
+        if not armazem.get("ativo", True):
+            await db.armazens.update_one({"id": armazem["id"]}, {"$set": {"ativo": True}})
+            armazem["ativo"] = True
+        return armazem
+    armazem = {
+        "id": str(uuid.uuid4()),
+        "codigo": "CD01",
+        "nome": "Depósito Principal",
+        "ativo": True,
+        "created_at": datetime.utcnow(),
+    }
+    await db.armazens.insert_one(armazem)
+    return armazem
 
 # CRUD Produtos
 @api_router.post("/produtos", response_model=Produto)
@@ -124,6 +152,14 @@ async def criar_produto(produto: ProdutoCreate):
     
     # Criar movimentação inicial se quantidade > 0
     if produto_obj.quantidade_atual > 0:
+        armazem = await obter_armazem_padrao()
+        await db.estoque_armazem.insert_one({
+            "id": f"{produto_obj.id}:{armazem['id']}",
+            "produto_id": produto_obj.id,
+            "armazem_id": armazem["id"],
+            "quantidade": produto_obj.quantidade_atual,
+            "updated_at": produto_obj.created_at,
+        })
         movimentacao = MovimentacaoEstoque(
             produto_id=produto_obj.id,
             tipo=TipoMovimentacao.ENTRADA,
@@ -131,7 +167,8 @@ async def criar_produto(produto: ProdutoCreate):
             quantidade=produto_obj.quantidade_atual,
             quantidade_anterior=0,
             quantidade_nova=produto_obj.quantidade_atual,
-            preco_unitario=produto_obj.preco_compra
+            preco_unitario=produto_obj.preco_compra,
+            armazem_id=armazem["id"],
         )
         await db.movimentacoes.insert_one(movimentacao.dict())
     
@@ -157,7 +194,7 @@ async def listar_produtos(
         produtos = [
             p for p in produtos 
             if busca_lower in p.get("nome", "").lower() or 
-               busca_lower in p.get("codigo_barras", "").lower()
+               busca_lower in (p.get("codigo_barras") or "").lower()
         ]
     
     return [Produto(**produto) for produto in produtos]
@@ -198,8 +235,36 @@ async def criar_movimentacao(movimentacao: MovimentacaoCreate):
     produto = await db.produtos.find_one({"id": movimentacao.produto_id, "ativo": True})
     if not produto:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
+
+    if movimentacao.fornecedor_id:
+        if movimentacao.tipo != TipoMovimentacao.ENTRADA or movimentacao.motivo != MotivoMovimentacao.COMPRA:
+            raise HTTPException(status_code=400, detail="Fornecedor só pode ser vinculado a uma entrada por compra")
+        fornecedor = await db.fornecedores.find_one({"id": movimentacao.fornecedor_id, "ativo": True})
+        if not fornecedor:
+            raise HTTPException(status_code=404, detail="Fornecedor não encontrado")
     
     quantidade_anterior = produto["quantidade_atual"]
+    armazem = await (
+        db.armazens.find_one({"id": movimentacao.armazem_id, "ativo": True})
+        if movimentacao.armazem_id
+        else obter_armazem_padrao()
+    )
+    if not armazem:
+        raise HTTPException(status_code=404, detail="Armazém não encontrado")
+
+    id_saldo = f"{produto['id']}:{armazem['id']}"
+    saldos_existentes = await db.estoque_armazem.count_documents({"produto_id": produto["id"]})
+    if saldos_existentes == 0:
+        await db.estoque_armazem.insert_one({
+            "id": id_saldo,
+            "produto_id": produto["id"],
+            "armazem_id": armazem["id"],
+            "quantidade": quantidade_anterior,
+            "updated_at": datetime.utcnow(),
+        })
+
+    saldo = await db.estoque_armazem.find_one({"id": id_saldo})
+    quantidade_armazem_anterior = saldo.get("quantidade", 0) if saldo else 0
     
     if movimentacao.tipo == TipoMovimentacao.ENTRADA:
         quantidade_nova = quantidade_anterior + movimentacao.quantidade
@@ -210,12 +275,31 @@ async def criar_movimentacao(movimentacao: MovimentacaoCreate):
                 status_code=400, 
                 detail=f"Estoque insuficiente. Disponível: {quantidade_anterior}"
             )
+        if quantidade_armazem_anterior < movimentacao.quantidade:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Estoque insuficiente no armazém. Disponível: {quantidade_armazem_anterior}",
+            )
+
+    agora = datetime.utcnow()
+    delta = movimentacao.quantidade if movimentacao.tipo == TipoMovimentacao.ENTRADA else -movimentacao.quantidade
+    await db.estoque_armazem.update_one(
+        {"id": id_saldo},
+        {
+            "$setOnInsert": {"id": id_saldo, "produto_id": produto["id"], "armazem_id": armazem["id"]},
+            "$inc": {"quantidade": delta},
+            "$set": {"updated_at": agora},
+        },
+        upsert=True,
+    )
     
     # Criar movimentação
+    movimentacao_dict = movimentacao.dict()
+    movimentacao_dict["armazem_id"] = armazem["id"]
     movimentacao_obj = MovimentacaoEstoque(
-        **movimentacao.dict(),
+        **movimentacao_dict,
         quantidade_anterior=quantidade_anterior,
-        quantidade_nova=quantidade_nova
+        quantidade_nova=quantidade_nova,
     )
     
     await db.movimentacoes.insert_one(movimentacao_obj.dict())
@@ -223,7 +307,7 @@ async def criar_movimentacao(movimentacao: MovimentacaoCreate):
     # Atualizar quantidade do produto
     await db.produtos.update_one(
         {"id": movimentacao.produto_id},
-        {"$set": {"quantidade_atual": quantidade_nova, "updated_at": datetime.utcnow()}}
+        {"$set": {"quantidade_atual": quantidade_nova, "updated_at": agora}}
     )
     
     return movimentacao_obj
