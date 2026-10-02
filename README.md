@@ -4,6 +4,8 @@ Sistema web para pequenos comércios controlarem estoque sem planilha: cadastro 
 
 ![Painel do StockMaster](docs/dashboard.png)
 
+**Teste agora, sem instalar nada:** https://cauacaetano.github.io/blue-rose-automacao-express/demos/stockmaster/
+
 ## O que ele faz
 
 - **Painel**: total de produtos, itens zerados, itens abaixo do mínimo e as últimas movimentações (com o nome do produto).
@@ -42,6 +44,15 @@ MONGO_URL=memory uvicorn server:app --port 8001
 cd frontend
 yarn install
 REACT_APP_BACKEND_URL=http://127.0.0.1:8001 yarn start
+```
+
+## Modo demonstração (sem servidor)
+
+`REACT_APP_DEMO=1` troca as chamadas da API por uma versão que roda no navegador (`frontend/src/demoApi.js`), com as mesmas regras do backend: nome único, saída maior que o saldo recusada, estoque baixo e desativação. Os dados ficam no `localStorage` de quem testa. É assim que a demonstração pública funciona.
+
+```bash
+cd frontend
+REACT_APP_DEMO=1 PUBLIC_URL=. yarn build
 ```
 
 ## Testes

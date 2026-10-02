@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import axios from "axios";
+import { ativarDemo, resetarDemo } from "./demoApi";
+
+const DEMO = process.env.REACT_APP_DEMO === "1";
+if (DEMO) ativarDemo(axios);
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -13,6 +17,25 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {DEMO && (
+        <div className="bg-gray-900 text-gray-100 text-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2">
+            <span>Demonstração ao vivo: cadastre, venda e veja o painel reagir. Os dados ficam só no seu navegador.</span>
+            <span className="flex flex-wrap gap-4">
+              <button
+                type="button"
+                className="underline underline-offset-2 hover:text-white"
+                onClick={() => { resetarDemo(); window.location.reload(); }}
+              >
+                Recomeçar com os dados de exemplo
+              </button>
+              <a className="underline underline-offset-2 hover:text-white" href="../../projetos.html#stockmaster" target="_top">
+                Voltar ao site da BLUE ROSE
+              </a>
+            </span>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
