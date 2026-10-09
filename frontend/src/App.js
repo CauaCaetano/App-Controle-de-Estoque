@@ -64,9 +64,6 @@ function App() {
               >
                 Recomeçar com os dados de exemplo
               </button>
-              <a className="underline underline-offset-2 hover:text-white" href="https://github.com/CauaCaetano/App-Controle-de-Estoque" target="_blank" rel="noreferrer">
-                Ver código-fonte no GitHub
-              </a>
               <span className="nexo-idioma flex items-center gap-1" role="group" aria-label="Idioma / Language">
                 {[['pt', 'PT'], ['en', 'EN']].map(([codigo, rotulo]) => <button key={codigo} type="button" lang={codigo === 'en' ? 'en' : 'pt-BR'} aria-pressed={IDIOMA === codigo} onClick={() => IDIOMA !== codigo && trocarIdioma(codigo)} className={`rounded px-2 py-0.5 text-xs font-bold ${IDIOMA === codigo ? 'bg-white text-gray-900' : 'text-gray-300 hover:text-white'}`}>{rotulo}</button>)}
               </span>

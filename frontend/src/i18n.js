@@ -48,7 +48,6 @@ const DICIONARIO = {
   // estrutura
   'Demonstração ao vivo: cadastre, venda e veja o painel reagir. Os dados ficam só no seu navegador.': 'Live demo: add products, make sales and watch the dashboard react. Your data stays in your browser.',
   'Recomeçar com os dados de exemplo': 'Start over with sample data',
-  'Ver código-fonte no GitHub': 'View source on GitHub',
   'Gestão de estoque': 'Inventory management',
   'Minha empresa': 'My company',
   'Unidade principal': 'Main location',
