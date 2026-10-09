@@ -11,7 +11,51 @@
 // Os dados ficam só no navegador de quem testa (localStorage).
 // =============================================================
 
-const CHAVE = 'nexo-erp-demo-v2';
+import { EN } from './i18n';
+
+// Cada idioma tem os seus dados de exemplo, guardados separados
+const CHAVE = EN ? 'nexo-erp-demo-v2-en' : 'nexo-erp-demo-v2';
+
+// Textos e dados do exemplo nos dois idiomas
+const X = EN ? {
+  deposito1: 'Main Warehouse', deposito2: 'Overflow Warehouse', cod1: 'WH01', cod2: 'WH02', sistema: 'System',
+  produtos: [
+    ['Brown rice 10 lb', 'Grocery', 'unidade', 10, 8.9, 13.49], ['Ground coffee 12 oz', 'Grocery', 'pacote', 12, 5.2, 8.99],
+    ['Dish soap 16 oz', 'Cleaning', 'unidade', 10, 1.1, 2.29], ['Paper towels 2-pack', 'Cleaning', 'pacote', 8, 2.4, 4.49],
+    ['Pinto beans 2 lb', 'Grocery', 'pacote', 10, 1.9, 3.29], ['Vegetable oil 48 oz', 'Grocery', 'unidade', 10, 3.1, 5.49],
+  ],
+  fornecedores: [
+    { razao_social: 'Golden Grain Distributors LLC', nome_fantasia: 'Golden Grain', documento: 'DEMO-SUP-001', email: 'sales@goldengrain.demo', telefone: '(312) 555-0101', contato: 'Megan Scott' },
+    { razao_social: 'CleanCo Wholesale Inc.', nome_fantasia: 'CleanCo', documento: 'DEMO-SUP-002', email: 'orders@cleanco.demo', telefone: '(312) 555-0102', contato: 'Ryan Lee' },
+  ],
+  clientes: [
+    { nome: 'Corner Market', documento: 'DEMO-CUS-001', email: 'buying@cornermarket.demo', telefone: '(312) 555-0201' },
+    { nome: 'Plaza Café', documento: 'DEMO-CUS-002', email: 'hello@plazacafe.demo', telefone: '(312) 555-0202' },
+    { nome: 'Central Pantry', documento: 'DEMO-CUS-003', email: 'stock@centralpantry.demo', telefone: '(312) 555-0203' },
+  ],
+  notaCompra: 'Initial demo shipment', notaVenda: 'Demo order',
+  audit1: 'Initial purchases received', audit2: 'Demo order shipped', criado: (c) => `Order ${c} created`,
+} : {
+  deposito1: 'Depósito Principal', deposito2: 'Depósito Secundário', cod1: 'CD01', cod2: 'CD02', sistema: 'Sistema',
+  produtos: [
+    ['Arroz integral 5kg', 'Mercearia', 'unidade', 10, 22.5, 31.9], ['Café torrado 500g', 'Mercearia', 'pacote', 12, 17.8, 25.9],
+    ['Detergente neutro 500ml', 'Limpeza', 'unidade', 10, 2.1, 3.49], ['Papel toalha 2 rolos', 'Limpeza', 'pacote', 8, 5.4, 8.9],
+    ['Feijão carioca 1kg', 'Mercearia', 'pacote', 10, 6.2, 8.9], ['Óleo de soja 900ml', 'Mercearia', 'unidade', 10, 5.3, 7.49],
+  ],
+  fornecedores: [
+    { razao_social: 'Distribuidora Vale do Grão Ltda.', nome_fantasia: 'Vale do Grão', documento: 'DEMO-FORN-001', email: 'vendas@valedograo.demo', telefone: '(11) 3333-1001', contato: 'Marina Souza' },
+    { razao_social: 'Higiene & Cia Atacado Ltda.', nome_fantasia: 'Higiene & Cia', documento: 'DEMO-FORN-002', email: 'comercial@higiene.demo', telefone: '(11) 3333-1002', contato: 'Rafael Lima' },
+  ],
+  clientes: [
+    { nome: 'Mercadinho São Bento', documento: 'DEMO-CLI-001', email: 'compras@saobento.demo', telefone: '(11) 4444-2001' },
+    { nome: 'Café da Praça', documento: 'DEMO-CLI-002', email: 'contato@cafedapraca.demo', telefone: '(11) 4444-2002' },
+    { nome: 'Empório Central', documento: 'DEMO-CLI-003', email: 'estoque@emporiocentral.demo', telefone: '(11) 4444-2003' },
+  ],
+  notaCompra: 'Carga inicial de demonstração', notaVenda: 'Pedido de demonstração',
+  audit1: 'Recebimento de compras iniciais', audit2: 'Expedição de pedido de demonstração', criado: (c) => `Pedido ${c} criado`,
+};
+// produtos do exemplo pela posição: 0 arroz, 1 café, 2 detergente, 3 papel toalha, 4 feijão, 5 óleo
+const NOME = X.produtos.map((p) => p[0]);
 const agora = () => new Date().toISOString();
 const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
 
@@ -21,8 +65,8 @@ function exemplo() {
   const movimentacoes = [];
   const quando = (dias) => new Date(t0 + dias * 864e5).toISOString();
   const armazens = [
-    { id: uuid(), codigo: 'CD01', nome: 'Depósito Principal', ativo: true, created_at: quando(0) },
-    { id: uuid(), codigo: 'CD02', nome: 'Depósito Secundário', ativo: true, created_at: quando(0) },
+    { id: uuid(), codigo: X.cod1, nome: X.deposito1, ativo: true, created_at: quando(0) },
+    { id: uuid(), codigo: X.cod2, nome: X.deposito2, ativo: true, created_at: quando(0) },
   ];
   const criar = (nome, categoria, unidade, minima, compra, venda, movs) => {
     const p = {
@@ -34,49 +78,45 @@ function exemplo() {
       p.quantidade_atual = tipo === 'entrada' ? anterior + qtd : anterior - qtd;
       movimentacoes.push({
         id: uuid(), produto_id: p.id, tipo, motivo, quantidade: qtd, quantidade_anterior: anterior,
-        quantidade_nova: p.quantidade_atual, preco_unitario: 0, observacoes: null, usuario: 'Sistema', created_at: quando(dia),
+        quantidade_nova: p.quantidade_atual, preco_unitario: 0, observacoes: null, usuario: X.sistema, created_at: quando(dia),
       });
     });
     produtos.push(p);
   };
-  criar('Arroz integral 5kg', 'Mercearia', 'unidade', 10, 22.5, 31.9, [['entrada', 60, 'compra', 0], ['saida', 10, 'venda', 5]]);
-  criar('Café torrado 500g', 'Mercearia', 'pacote', 12, 17.8, 25.9, [['entrada', 30, 'compra', 0], ['saida', 6, 'venda', 4]]);
-  criar('Detergente neutro 500ml', 'Limpeza', 'unidade', 10, 2.1, 3.49, [['entrada', 24, 'compra', 1], ['saida', 15, 'venda', 5]]);
-  criar('Papel toalha 2 rolos', 'Limpeza', 'pacote', 8, 5.4, 8.9, [['entrada', 20, 'compra', 1], ['saida', 4, 'venda', 3]]);
-  criar('Feijão carioca 1kg', 'Mercearia', 'pacote', 10, 6.2, 8.9, [['entrada', 40, 'compra', 2], ['saida', 10, 'venda', 5]]);
-  criar('Óleo de soja 900ml', 'Mercearia', 'unidade', 10, 5.3, 7.49, [['entrada', 40, 'compra', 2], ['saida', 4, 'venda', 5]]);
+  const MOVS = [
+    [['entrada', 60, 'compra', 0], ['saida', 10, 'venda', 5]],
+    [['entrada', 30, 'compra', 0], ['saida', 6, 'venda', 4]],
+    [['entrada', 24, 'compra', 1], ['saida', 15, 'venda', 5]],
+    [['entrada', 20, 'compra', 1], ['saida', 4, 'venda', 3]],
+    [['entrada', 40, 'compra', 2], ['saida', 10, 'venda', 5]],
+    [['entrada', 40, 'compra', 2], ['saida', 4, 'venda', 5]],
+  ];
+  X.produtos.forEach((p, i) => criar(...p, MOVS[i]));
   const produto = (nome) => produtos.find((p) => p.nome === nome);
-  const fornecedores = [
-    { id: uuid(), razao_social: 'Distribuidora Vale do Grão Ltda.', nome_fantasia: 'Vale do Grão', documento: 'DEMO-FORN-001', email: 'vendas@valedograo.demo', telefone: '(11) 3333-1001', contato: 'Marina Souza', ativo: true, created_at: quando(0), updated_at: quando(0) },
-    { id: uuid(), razao_social: 'Higiene & Cia Atacado Ltda.', nome_fantasia: 'Higiene & Cia', documento: 'DEMO-FORN-002', email: 'comercial@higiene.demo', telefone: '(11) 3333-1002', contato: 'Rafael Lima', ativo: true, created_at: quando(0), updated_at: quando(0) },
-  ];
-  const clientes = [
-    { id: uuid(), nome: 'Mercadinho São Bento', documento: 'DEMO-CLI-001', email: 'compras@saobento.demo', telefone: '(11) 4444-2001', ativo: true, created_at: quando(0) },
-    { id: uuid(), nome: 'Café da Praça', documento: 'DEMO-CLI-002', email: 'contato@cafedapraca.demo', telefone: '(11) 4444-2002', ativo: true, created_at: quando(0) },
-    { id: uuid(), nome: 'Empório Central', documento: 'DEMO-CLI-003', email: 'estoque@emporiocentral.demo', telefone: '(11) 4444-2003', ativo: true, created_at: quando(0) },
-  ];
+  const fornecedores = X.fornecedores.map((x) => ({ id: uuid(), ...x, ativo: true, created_at: quando(0), updated_at: quando(0) }));
+  const clientes = X.clientes.map((x) => ({ id: uuid(), ...x, ativo: true, created_at: quando(0) }));
   const linhas = (nomes) => nomes.map(([nome, quantidade, preco]) => {
     const p = produto(nome);
     return { id: uuid(), produto_id: p.id, produto_nome: p.nome, unidade_medida: p.unidade_medida, quantidade, preco_unitario: preco, total: Number((quantidade * preco).toFixed(2)), quantidade_recebida: quantidade };
   });
-  const pedidoCompra = (codigo, fornecedor, itens, dia) => ({ id: uuid(), codigo, tipo: 'compra', fornecedor_id: fornecedor.id, fornecedor_nome: fornecedor.nome_fantasia, armazem_id: armazens[0].id, armazem_nome: armazens[0].nome, itens, total: Number(itens.reduce((s, i) => s + i.total, 0).toFixed(2)), status: 'recebido', observacoes: 'Carga inicial de demonstração', created_at: quando(dia), updated_at: quando(dia) });
+  const pedidoCompra = (codigo, fornecedor, itens, dia) => ({ id: uuid(), codigo, tipo: 'compra', fornecedor_id: fornecedor.id, fornecedor_nome: fornecedor.nome_fantasia, armazem_id: armazens[0].id, armazem_nome: armazens[0].nome, itens, total: Number(itens.reduce((s, i) => s + i.total, 0).toFixed(2)), status: 'recebido', observacoes: X.notaCompra, created_at: quando(dia), updated_at: quando(dia) });
   const pedidoVenda = (codigo, cliente, warehouse, nomes, status, dia) => {
     const itens = nomes.map(([nome, quantidade, preco]) => { const p = produto(nome); return { id: uuid(), produto_id: p.id, produto_nome: p.nome, unidade_medida: p.unidade_medida, quantidade, preco_unitario: preco, total: Number((quantidade * preco).toFixed(2)) }; });
-    return { id: uuid(), codigo, tipo: 'venda', cliente_id: cliente.id, cliente_nome: cliente.nome, armazem_id: warehouse.id, armazem_nome: warehouse.nome, itens, total: Number(itens.reduce((s, i) => s + i.total, 0).toFixed(2)), status, observacoes: 'Pedido de demonstração', created_at: quando(dia), updated_at: quando(dia), ...(status === 'expedido' ? { expedido_at: quando(dia) } : {}) };
+    return { id: uuid(), codigo, tipo: 'venda', cliente_id: cliente.id, cliente_nome: cliente.nome, armazem_id: warehouse.id, armazem_nome: warehouse.nome, itens, total: Number(itens.reduce((s, i) => s + i.total, 0).toFixed(2)), status, observacoes: X.notaVenda, created_at: quando(dia), updated_at: quando(dia), ...(status === 'expedido' ? { expedido_at: quando(dia) } : {}) };
   };
   const pedidos_compra = [
-    pedidoCompra('PC-260930-001', fornecedores[0], linhas([['Arroz integral 5kg', 60, 22.5], ['Café torrado 500g', 30, 17.8], ['Feijão carioca 1kg', 40, 6.2], ['Óleo de soja 900ml', 40, 5.3]]), 0),
-    pedidoCompra('PC-260930-002', fornecedores[1], linhas([['Detergente neutro 500ml', 24, 2.1], ['Papel toalha 2 rolos', 20, 5.4]]), 1),
+    pedidoCompra('PC-260930-001', fornecedores[0], linhas([[0, 60], [1, 30], [4, 40], [5, 40]].map(([i, q]) => [NOME[i], q, X.produtos[i][4]])), 0),
+    pedidoCompra('PC-260930-002', fornecedores[1], linhas([[2, 24], [3, 20]].map(([i, q]) => [NOME[i], q, X.produtos[i][4]])), 1),
   ];
   // O arroz está dividido entre os dois depósitos: 42 no principal e 8 no secundário.
-  const arroz = produto('Arroz integral 5kg');
+  const arroz = produto(NOME[0]);
   movimentacoes.push(
     { id: uuid(), produto_id: arroz.id, tipo: 'saida', motivo: 'transferencia', quantidade: 8, quantidade_anterior: arroz.quantidade_atual, quantidade_nova: arroz.quantidade_atual, armazem_id: armazens[0].id, armazem_origem_id: armazens[0].id, armazem_destino_id: armazens[1].id, created_at: quando(5) },
     { id: uuid(), produto_id: arroz.id, tipo: 'entrada', motivo: 'transferencia', quantidade: 8, quantidade_anterior: arroz.quantidade_atual, quantidade_nova: arroz.quantidade_atual, armazem_id: armazens[1].id, armazem_origem_id: armazens[0].id, armazem_destino_id: armazens[1].id, created_at: quando(5) },
   );
   const pedidos_venda = [
-    pedidoVenda('PV-261001-001', clientes[0], armazens[0], [['Café torrado 500g', 6, 25.9], ['Detergente neutro 500ml', 15, 3.49], ['Papel toalha 2 rolos', 4, 8.9], ['Feijão carioca 1kg', 10, 8.9], ['Óleo de soja 900ml', 4, 7.49]], 'expedido', 5),
-    pedidoVenda('PV-261002-002', clientes[1], armazens[0], [['Arroz integral 5kg', 6, 31.9], ['Papel toalha 2 rolos', 3, 8.9]], 'aberto', 6),
+    pedidoVenda('PV-261001-001', clientes[0], armazens[0], [[1, 6], [2, 15], [3, 4], [4, 10], [5, 4]].map(([i, q]) => [NOME[i], q, X.produtos[i][5]]), 'expedido', 5),
+    pedidoVenda('PV-261002-002', clientes[1], armazens[0], [[0, 6], [3, 3]].map(([i, q]) => [NOME[i], q, X.produtos[i][5]]), 'aberto', 6),
   ];
   return {
     produtos, movimentacoes, armazens,
@@ -85,8 +125,8 @@ function exemplo() {
       : [{ id: `${p.id}:${armazens[0].id}`, produto_id: p.id, armazem_id: armazens[0].id, quantidade: p.quantidade_atual }]),
     fornecedores, clientes, pedidos_compra, pedidos_venda,
     auditoria: [
-      { id: uuid(), acao: 'pedido_recebido', entidade: 'compra', descricao: 'Recebimento de compras iniciais', created_at: quando(1) },
-      { id: uuid(), acao: 'pedido_expedição', entidade: 'venda', descricao: 'Expedição de pedido de demonstração', created_at: quando(5) },
+      { id: uuid(), acao: 'pedido_recebido', entidade: 'compra', descricao: X.audit1, created_at: quando(1) },
+      { id: uuid(), acao: 'pedido_expedição', entidade: 'venda', descricao: X.audit2, created_at: quando(5) },
     ],
   };
 }
@@ -96,7 +136,7 @@ function carregar() {
   if (banco) return banco;
   try { banco = JSON.parse(localStorage.getItem(CHAVE)); } catch (e) { banco = null; }
   if (!banco || !Array.isArray(banco.produtos)) banco = exemplo();
-  banco.armazens ||= [{ id: uuid(), codigo: 'CD01', nome: 'Depósito Principal', ativo: true, created_at: agora() }];
+  banco.armazens ||= [{ id: uuid(), codigo: X.cod1, nome: X.deposito1, ativo: true, created_at: agora() }];
   banco.fornecedores ||= [];
   banco.clientes ||= [];
   banco.pedidos_compra ||= [];
@@ -119,7 +159,7 @@ class ErroApi extends Error {
 const porData = (a, b) => (a.created_at < b.created_at ? 1 : -1);
 
 function obterArmazemPadrao(b) {
-  if (!b.armazens.length) b.armazens.push({ id: uuid(), codigo: 'CD01', nome: 'Depósito Principal', ativo: true, created_at: agora() });
+  if (!b.armazens.length) b.armazens.push({ id: uuid(), codigo: X.cod1, nome: X.deposito1, ativo: true, created_at: agora() });
   return b.armazens.find((a) => a.ativo) || b.armazens[0];
 }
 function saldoArmazem(b, produtoId, armazemId) {
@@ -141,7 +181,7 @@ function registrarMovimento(b, produto, tipo, motivo, quantidade, armazemId, ext
   saldo.quantidade += sinal * quantidade;
   produto.quantidade_atual += sinal * quantidade;
   produto.updated_at = agora();
-  const mov = { id: uuid(), produto_id: produto.id, tipo, motivo, quantidade, quantidade_anterior: anteriorGlobal, quantidade_nova: produto.quantidade_atual, quantidade_anterior_armazem: anteriorLocal, quantidade_nova_armazem: saldo.quantidade, armazem_id: armazemId, preco_unitario: 0, observacoes: null, usuario: 'Sistema', created_at: agora(), ...extras };
+  const mov = { id: uuid(), produto_id: produto.id, tipo, motivo, quantidade, quantidade_anterior: anteriorGlobal, quantidade_nova: produto.quantidade_atual, quantidade_anterior_armazem: anteriorLocal, quantidade_nova_armazem: saldo.quantidade, armazem_id: armazemId, preco_unitario: 0, observacoes: null, usuario: X.sistema, created_at: agora(), ...extras };
   b.movimentacoes.push(mov);
   return mov;
 }
@@ -176,7 +216,7 @@ function rotear(metodo, caminho, params, corpo) {
       b.movimentacoes.push({
         id: uuid(), produto_id: p.id, tipo: 'entrada', motivo: 'inicial', quantidade: p.quantidade_atual,
         quantidade_anterior: 0, quantidade_nova: p.quantidade_atual, preco_unitario: p.preco_compra,
-        observacoes: null, usuario: 'Sistema', created_at: agora(),
+        observacoes: null, usuario: X.sistema, created_at: agora(),
       });
     }
     salvar();
@@ -201,7 +241,7 @@ function rotear(metodo, caminho, params, corpo) {
     const qtd = Number(corpo.quantidade);
     const armazem = corpo.armazem_id ? b.armazens.find((a) => a.id === corpo.armazem_id && a.ativo) : obterArmazemPadrao(b);
     if (!armazem) throw new ErroApi(404, 'Armazém não encontrado');
-    const mov = registrarMovimento(b, p, corpo.tipo, corpo.motivo, qtd, armazem.id, { preco_unitario: Number(corpo.preco_unitario) || 0, observacoes: corpo.observacoes || null, usuario: corpo.usuario || 'Sistema', fornecedor_id: corpo.fornecedor_id || null, pedido_id: corpo.pedido_id || null, cliente_id: corpo.cliente_id || null });
+    const mov = registrarMovimento(b, p, corpo.tipo, corpo.motivo, qtd, armazem.id, { preco_unitario: Number(corpo.preco_unitario) || 0, observacoes: corpo.observacoes || null, usuario: corpo.usuario || X.sistema, fornecedor_id: corpo.fornecedor_id || null, pedido_id: corpo.pedido_id || null, cliente_id: corpo.cliente_id || null });
     salvar();
     return mov;
   }
@@ -279,7 +319,7 @@ function rotear(metodo, caminho, params, corpo) {
     for (const [armazem, tipo, anterior] of [[origem, 'saida', de.quantidade], [destino, 'entrada', para.quantidade]]) {
       const saldo = armazem.id === origem.id ? de : para;
       saldo.quantidade += tipo === 'entrada' ? qtd : -qtd;
-      b.movimentacoes.push({ id: uuid(), produto_id: produto.id, tipo, motivo: 'transferencia', quantidade: qtd, quantidade_anterior: anterior, quantidade_nova: saldo.quantidade, armazem_id: armazem.id, armazem_origem_id: origem.id, armazem_destino_id: destino.id, transferencia_id: idTransferencia, observacoes: corpo.observacoes || null, usuario: corpo.usuario || 'Sistema', created_at: agora() });
+      b.movimentacoes.push({ id: uuid(), produto_id: produto.id, tipo, motivo: 'transferencia', quantidade: qtd, quantidade_anterior: anterior, quantidade_nova: saldo.quantidade, armazem_id: armazem.id, armazem_origem_id: origem.id, armazem_destino_id: destino.id, transferencia_id: idTransferencia, observacoes: corpo.observacoes || null, usuario: corpo.usuario || X.sistema, created_at: agora() });
     }
     salvar(); return { message: 'Transferência registrada', transferencia_id: idTransferencia, estoque_restante_origem: de.quantidade, estoque_destino: para.quantidade, estoque_global: produto.quantidade_atual };
   }
@@ -295,7 +335,7 @@ function rotear(metodo, caminho, params, corpo) {
       if (!itens.length) throw new ErroApi(400, 'Adicione ao menos um item');
       const codigo = `${compra ? 'PC' : 'PV'}-${Date.now().toString().slice(-8)}`;
       const pedido = { id: uuid(), codigo, tipo: compra ? 'compra' : 'venda', [pessoaKey]: pessoa.id, [pessoaNome]: compra ? nomeFornecedor(pessoa) : pessoa.nome, armazem_id: armazem.id, armazem_nome: armazem.nome, itens, total: +itens.reduce((s, x) => s + x.total, 0).toFixed(2), status: 'aberto', observacoes: corpo.observacoes || null, created_at: agora(), updated_at: agora() };
-      b[chave].push(pedido); b.auditoria.push({ id: uuid(), acao: 'pedido_criado', entidade: compra ? 'compra' : 'venda', entidade_id: pedido.id, descricao: `Pedido ${codigo} criado`, created_at: agora() }); salvar(); return pedido;
+      b[chave].push(pedido); b.auditoria.push({ id: uuid(), acao: 'pedido_criado', entidade: compra ? 'compra' : 'venda', entidade_id: pedido.id, descricao: X.criado(codigo), created_at: agora() }); salvar(); return pedido;
     }
     if (m[2] && metodo === 'post') {
       const pedido = b[chave].find((x) => x.id === m[2]); if (!pedido) throw new ErroApi(404, 'Pedido não encontrado');

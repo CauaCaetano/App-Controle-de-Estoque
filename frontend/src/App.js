@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import axios from "axios";
 import { ativarDemo, resetarDemo } from "./demoApi";
+import { iniciarIdioma, dinheiro, LOCALE, IDIOMA, trocarIdioma } from "./i18n";
 import { Activity, ArrowLeftRight, ArrowUpFromLine, Bell, Boxes, Building2, ChevronRight, CircleHelp, ClipboardList, LayoutDashboard, Package, ShoppingCart, Truck, UserRound, Warehouse } from "lucide-react";
 
 const DEMO = process.env.REACT_APP_DEMO === "1";
+iniciarIdioma();
 if (DEMO) ativarDemo(axios);
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -15,7 +17,7 @@ const paginaSolicitada = () => {
   return PAGINAS.includes(pagina) ? pagina : 'dashboard';
 };
 
-const reais = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const reais = dinheiro;
 const rotulosMotivo = { compra: 'Compra', venda: 'Venda', perda: 'Perda', devolucao: 'Devolução', ajuste: 'Ajuste de estoque', inicial: 'Saldo inicial', transferencia: 'Transferência' };
 const rotuloMotivo = (motivo) => rotulosMotivo[motivo] || motivo;
 
@@ -65,6 +67,9 @@ function App() {
               <a className="underline underline-offset-2 hover:text-white" href="https://github.com/CauaCaetano/App-Controle-de-Estoque" target="_blank" rel="noreferrer">
                 Ver código-fonte no GitHub
               </a>
+              <span className="nexo-idioma flex items-center gap-1" role="group" aria-label="Idioma / Language">
+                {[['pt', 'PT'], ['en', 'EN']].map(([codigo, rotulo]) => <button key={codigo} type="button" lang={codigo === 'en' ? 'en' : 'pt-BR'} aria-pressed={IDIOMA === codigo} onClick={() => IDIOMA !== codigo && trocarIdioma(codigo)} className={`rounded px-2 py-0.5 text-xs font-bold ${IDIOMA === codigo ? 'bg-white text-gray-900' : 'text-gray-300 hover:text-white'}`}>{rotulo}</button>)}
+              </span>
             </span>
           </div>
         </div>
@@ -322,7 +327,7 @@ function PedidosPage({ tipo }) {
   return <div className="space-y-6">
     <header className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.15em] text-indigo-600">Ciclo operacional</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{compra ? 'Compras' : 'Vendas'}</h2><p className="mt-1 text-sm text-slate-500">{compra ? 'Do fornecedor ao recebimento no armazém.' : 'Do pedido do cliente à expedição pelo armazém.'}</p></div><div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">{pedidos.length} {pedidos.length === 1 ? 'pedido' : 'pedidos'}</div></header>
     {erro && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{erro}</div>}{aviso && <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{aviso}</div>}
-    <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-200/40 sm:p-6"><div className="mb-5"><h3 className="text-sm font-bold text-slate-800">Novo pedido de {compra ? 'compra' : 'venda'}</h3><p className="mt-1 text-xs text-slate-400">Os itens e valores ficam registrados no documento.</p></div>
+    <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-200/40 sm:p-6"><div className="mb-5"><h3 className="text-sm font-bold text-slate-800">{compra ? 'Novo pedido de compra' : 'Novo pedido de venda'}</h3><p className="mt-1 text-xs text-slate-400">Os itens e valores ficam registrados no documento.</p></div>
       <form onSubmit={salvarPedido} className="space-y-5">
         <div className="grid gap-4 md:grid-cols-3">
           <label className="text-xs font-semibold text-slate-600">{compra ? 'Fornecedor' : 'Cliente'}<select required value={parceiroId} onChange={(event) => setParceiroId(event.target.value)} className="mt-1 w-full border bg-white px-3 py-2.5"><option value="">Selecione</option>{parceiros.map((parceiro) => <option key={parceiro.id} value={parceiro.id}>{compra ? (parceiro.nome_fantasia || parceiro.razao_social) : parceiro.nome}</option>)}</select></label>
@@ -331,11 +336,11 @@ function PedidosPage({ tipo }) {
         </div>
         <div><div className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Itens do pedido</div><ItemPedidoEditor produtos={produtos} itens={itens} setItens={setItens} tipo={tipo}/></div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4"><div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total do pedido</div><div className="mt-0.5 text-xl font-bold tabular-nums text-slate-900">{reais(totalRascunho)}</div></div><button disabled={saving || !parceiroId || !armazemId || !itens.length} className="rounded-lg bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Salvando...' : `Criar pedido de ${compra ? 'compra' : 'venda'}`}</button></div>
-        {!parceiros.length && <p className="text-xs text-amber-700">Cadastre {compra ? 'um fornecedor' : 'um cliente'} antes de criar pedidos.</p>}
+        {!parceiros.length && <p className="text-xs text-amber-700">{compra ? 'Cadastre um fornecedor antes de criar pedidos.' : 'Cadastre um cliente antes de criar pedidos.'}</p>}
       </form>
     </section>
-    <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/40"><div className="border-b border-slate-100 px-5 py-4"><h3 className="text-sm font-bold text-slate-800">Pedidos registrados</h3><p className="mt-1 text-xs text-slate-400">Cada {compra ? 'recebimento' : 'expedição'} atualiza o histórico e o saldo do armazém.</p></div>
-      {loading ? <div className="px-5 py-10 text-center text-sm text-slate-400" role="status">Carregando pedidos...</div> : !pedidos.length ? <div className="px-5 py-10 text-center"><p className="text-sm font-semibold text-slate-700">Ainda não há pedidos</p><p className="mt-1 text-xs text-slate-400">Crie um pedido acima para iniciar este fluxo.</p></div> : <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400"><tr><th className="px-5 py-3">Pedido</th><th className="px-5 py-3">{compra ? 'Fornecedor' : 'Cliente'}</th><th className="px-5 py-3">Armazém / Itens</th><th className="px-5 py-3 text-right">Total</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Ação</th></tr></thead><tbody className="divide-y divide-slate-100">{pedidos.map((pedido) => <tr key={pedido.id}><td className="whitespace-nowrap px-5 py-4"><div className="font-semibold text-slate-800">{pedido.codigo}</div><div className="mt-1 text-[10px] text-slate-400">{new Date(pedido.created_at).toLocaleDateString('pt-BR')}</div></td><td className="px-5 py-4 font-medium text-slate-700">{compra ? pedido.fornecedor_nome : pedido.cliente_nome}</td><td className="px-5 py-4"><div className="text-xs text-slate-600">{pedido.armazem_nome}</div><div className="mt-1 text-[10px] text-slate-400">{pedido.itens.length} {pedido.itens.length === 1 ? 'item' : 'itens'}</div></td><td className="whitespace-nowrap px-5 py-4 text-right font-semibold tabular-nums text-slate-700">{reais(pedido.total)}</td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${pedido.status === 'expedido' || pedido.status === 'recebido' ? 'bg-emerald-50 text-emerald-700' : pedido.status === 'parcialmente_recebido' ? 'bg-amber-50 text-amber-700' : 'bg-indigo-50 text-indigo-700'}`}>{statusPedidoLabel[pedido.status] || pedido.status}</span></td><td className="px-5 py-4">{(compra ? pedido.status !== 'recebido' : pedido.status === 'aberto') && <button disabled={actionId === pedido.id} onClick={() => processarPedido(pedido)} className="whitespace-nowrap rounded-lg border border-indigo-200 px-3 py-2 text-[11px] font-bold text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50">{actionId === pedido.id ? 'Processando...' : compra ? (pedido.status === 'aberto' ? 'Receber itens' : 'Receber restante') : 'Expedir pedido'}</button>}</td></tr>)}</tbody></table></div>}
+    <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/40"><div className="border-b border-slate-100 px-5 py-4"><h3 className="text-sm font-bold text-slate-800">Pedidos registrados</h3><p className="mt-1 text-xs text-slate-400">{compra ? 'Cada recebimento atualiza o histórico e o saldo do armazém.' : 'Cada expedição atualiza o histórico e o saldo do armazém.'}</p></div>
+      {loading ? <div className="px-5 py-10 text-center text-sm text-slate-400" role="status">Carregando pedidos...</div> : !pedidos.length ? <div className="px-5 py-10 text-center"><p className="text-sm font-semibold text-slate-700">Ainda não há pedidos</p><p className="mt-1 text-xs text-slate-400">Crie um pedido acima para iniciar este fluxo.</p></div> : <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400"><tr><th className="px-5 py-3">Pedido</th><th className="px-5 py-3">{compra ? 'Fornecedor' : 'Cliente'}</th><th className="px-5 py-3">Armazém / Itens</th><th className="px-5 py-3 text-right">Total</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Ação</th></tr></thead><tbody className="divide-y divide-slate-100">{pedidos.map((pedido) => <tr key={pedido.id}><td className="whitespace-nowrap px-5 py-4"><div className="font-semibold text-slate-800">{pedido.codigo}</div><div className="mt-1 text-[10px] text-slate-400">{new Date(pedido.created_at).toLocaleDateString(LOCALE)}</div></td><td className="px-5 py-4 font-medium text-slate-700">{compra ? pedido.fornecedor_nome : pedido.cliente_nome}</td><td className="px-5 py-4"><div className="text-xs text-slate-600">{pedido.armazem_nome}</div><div className="mt-1 text-[10px] text-slate-400">{pedido.itens.length} {pedido.itens.length === 1 ? 'item' : 'itens'}</div></td><td className="whitespace-nowrap px-5 py-4 text-right font-semibold tabular-nums text-slate-700">{reais(pedido.total)}</td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${pedido.status === 'expedido' || pedido.status === 'recebido' ? 'bg-emerald-50 text-emerald-700' : pedido.status === 'parcialmente_recebido' ? 'bg-amber-50 text-amber-700' : 'bg-indigo-50 text-indigo-700'}`}>{statusPedidoLabel[pedido.status] || pedido.status}</span></td><td className="px-5 py-4">{(compra ? pedido.status !== 'recebido' : pedido.status === 'aberto') && <button disabled={actionId === pedido.id} onClick={() => processarPedido(pedido)} className="whitespace-nowrap rounded-lg border border-indigo-200 px-3 py-2 text-[11px] font-bold text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50">{actionId === pedido.id ? 'Processando...' : compra ? (pedido.status === 'aberto' ? 'Receber itens' : 'Receber restante') : 'Expedir pedido'}</button>}</td></tr>)}</tbody></table></div>}
     </section>
   </div>;
 }
@@ -581,7 +586,7 @@ function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div><p className="text-xs font-bold uppercase tracking-[.15em] text-indigo-600">Painel operacional</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">Visão geral do estoque</h2><p className="mt-1 text-sm text-slate-500">Acompanhe seus produtos, alertas e atividades recentes.</p></div>
-        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500">{new Date().toLocaleDateString(LOCALE, { day: '2-digit', month: 'long', year: 'numeric' })}</div>
       </div>
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -653,7 +658,7 @@ function Dashboard() {
       {/* Alertas */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/40">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h3 className="text-sm font-bold text-slate-800">Atenção ao estoque</h3><p className="mt-1 text-xs text-slate-400">Produtos que precisam de reposição</p></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${(dashboard.produtos_zerados?.length || 0) + (dashboard.estoque_baixo?.length || 0) ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>{(dashboard.produtos_zerados?.length || 0) + (dashboard.estoque_baixo?.length || 0)} alertas</span></div>
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h3 className="text-sm font-bold text-slate-800">Atenção ao estoque</h3><p className="mt-1 text-xs text-slate-400">Produtos que precisam de reposição</p></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${(dashboard.produtos_zerados?.length || 0) + (dashboard.estoque_baixo?.length || 0) ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>{(() => { const n = (dashboard.produtos_zerados?.length || 0) + (dashboard.estoque_baixo?.length || 0); return `${n} ${n === 1 ? 'alerta' : 'alertas'}`; })()}</span></div>
           <div className="divide-y divide-slate-100">
             {[...(dashboard.produtos_zerados || []).map((produto) => ({ ...produto, status: 'Zerado' })), ...(dashboard.estoque_baixo || []).map((produto) => ({ ...produto, status: 'Baixo' }))].slice(0, 6).map((produto) => <div key={`${produto.id}-${produto.status}`} className="flex items-center justify-between gap-3 px-5 py-3.5"><div className="min-w-0"><div className="truncate text-xs font-semibold text-slate-700">{produto.nome}</div><div className="mt-1 text-[10px] text-slate-400">Saldo {produto.quantidade_atual} <span className="mx-1">·</span> Mínimo {produto.quantidade_minima}</div></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${produto.status === 'Zerado' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{produto.status}</span></div>)}
             {(dashboard.produtos_zerados?.length || 0) + (dashboard.estoque_baixo?.length || 0) === 0 && <div className="px-5 py-8 text-center"><div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-emerald-50 text-emerald-600"><Boxes size={17}/></div><p className="mt-2 text-xs font-semibold text-slate-700">Tudo em ordem</p><p className="mt-1 text-[11px] text-slate-400">Nenhum produto abaixo do nível mínimo.</p></div>}
@@ -694,7 +699,7 @@ function Dashboard() {
                 {dashboard.ultimas_movimentacoes.slice(0, 5).map((mov) => (
                   <tr key={mov.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(mov.created_at).toLocaleDateString('pt-BR')}
+                      {new Date(mov.created_at).toLocaleDateString(LOCALE)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {dashboard.nomes[mov.produto_id] || 'Produto removido'}
@@ -1232,7 +1237,7 @@ function Movimentacoes() {
                 {movimentacoes.map((mov) => (
                   <tr key={mov.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(mov.created_at).toLocaleDateString('pt-BR')}
+                      {new Date(mov.created_at).toLocaleDateString(LOCALE)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {getProdutoNome(mov.produto_id)}

@@ -61,6 +61,8 @@ cd frontend
 REACT_APP_DEMO=1 PUBLIC_URL=. yarn build
 ```
 
+A interface tem português e inglês (`frontend/src/i18n.js`). Use `?lang=en` ou `?lang=pt` na URL, ou o seletor PT/EN na faixa da demonstração. Em inglês, os valores aparecem em dólar, as datas no formato americano e a demonstração usa dados de exemplo próprios.
+
 ## Testes
 
 ```bash
