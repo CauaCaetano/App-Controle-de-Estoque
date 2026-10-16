@@ -2,7 +2,7 @@
 
 Um ERP operacional para uma pequena distribuidora. O sistema conecta cadastro de produtos, fornecedores, compras, recebimento, saldo por depósito, clientes, pedidos de venda e expedição em um mesmo fluxo. Cada movimento de estoque tem uma origem compreensível: uma compra recebida, uma venda expedida ou uma transferência entre depósitos.
 
-**Demonstração ao vivo:** [Abra o Nexo Gestão no site BLUE ROSE](https://cauacaetano.github.io/blue-rose-automacao-express/demos/stockmaster/) · [Veja o projeto na vitrine](https://cauacaetano.github.io/blue-rose-automacao-express/projetos.html#stockmaster)
+**Demonstração ao vivo:** [Abra o Nexo Gestão no site BLUE ROSE](https://bluerose-store.com/demos/stockmaster/) · [Veja o projeto na vitrine](https://bluerose-store.com/projetos.html#stockmaster)
 
 ![Painel operacional do Nexo Gestão com alertas, produtos por categoria e movimentações recentes](docs/dashboard.png)
 
